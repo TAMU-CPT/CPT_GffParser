@@ -1,13 +1,18 @@
 # CPT_GFFParser
 An extensively featured Python parser for GFF format reading and writing
 
-##### Table of Contents  
-[Need](#Need)  
-[Goals](#Goals)  
-[Release](#Release)  
-[library-contents](#library-contents)  
-[Credit](#Credit)  
-[Contact Us](#contact-us)  
+### Table of Contents  
+- [Need](#Need)  
+- [Goals](#Goals)  
+- [Release](#Release)  
+- [Library Contents](#library-contents)  
+  - [CPT_GFFParser.gffParse](#library-contents)
+  - [CPT_GFFParser.gffWrite](#library-contents)
+  - [gffSeqFeature.gffSeqFeature](#library-contents)
+  - [gffSeqFeature.convertSeqRec](#library-contents)
+  - [gffSeqFeature.convertSeqFeat](#library-contents)
+- [Credit](#Credit)  
+- [Contact Us](#contact-us)  
     
 
 ## Need
