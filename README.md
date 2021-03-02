@@ -1,4 +1,4 @@
-# CPT_GffParser
+# CPT_GFFParser
 An extensively featured Python parser for GFF format reading and writing
 
 ## Need
@@ -28,13 +28,42 @@ Given a lack of available solutions, the decision was made to develop our own GF
    - We desired to extend this experience to the parser, and create a tool that, as best as possible, could withstand reading in improperly formatted GFF files until the EOF, and output a comprehensive list of problematic lines and their errors. It hoped that the errorlog this program creates will have enough information that the user will only need to go back for one round of changes.
 
 ## Release
-GFFParse and GFFWrite were initially released at the end of Summer, 2020 on the CPT Galaxy server, effective across all of our tools interfacing with GFF files. Thanks to the testing and patience of our users and students, it was a mostly stable library by the end of September, and almost fully featured by that November. February 2021 marks the most recent round of feature implementation, primarily focused on metadata features and metadata directives the GFF spec names pragmas (The initial release supported the ##FASTA pragma, but the others were not deemed a priority at the time). Additionally, in anticipation of a public standalone release, more arguments were added to the primary IO functions in order to help users fit the tool to their own needs. For example, the CPT frequently finds it highly useful in our workflow to strip as much metadata as possible, however we have now implemented a variety of options for writing out and dynamically creating metadata features and annotations if desired.
+gffParse and gffWrite were initially released at the end of Summer, 2020 on the CPT Galaxy server, effective across all of our tools interfacing with GFF files. Thanks to the testing and patience of our users and students, it was a mostly stable library by the end of September, and almost fully featured by that November. February 2021 marks the most recent round of feature implementation, primarily focused on metadata features and metadata directives the GFF spec names pragmas (The initial release supported the ##FASTA pragma, but the others were not deemed a priority at the time). Additionally, in anticipation of a public standalone release, more arguments were added to the primary IO functions in order to help users fit the tool to their own needs. For example, the CPT frequently finds it highly useful in our workflow to strip as much metadata as possible, however we have now implemented a variety of options for writing out and dynamically creating metadata features and annotations if desired.
 
 ## Library Contents
-### CPT_GFFParser.GFFParse
+### CPT_GFFParser.gffParse
+The primary function for reading in GFF files. Will return a list of SeqRecord objects, with gffSeqFeature objects as their .feature lists.
 
-### CPT_GFFParser.GFFWrite
+`gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=\["CDS"], metaTypes = \["remark"], suppressMeta = 2, pragmaPriority = True, pragmaOverridePriority = True):`
+- gff3In --- source file handle
+- base_dict --- Additional SeqRecord information. Keys are OrganismIDs and values are SeqRecords. For BCBio backwards compatibility.
+- outStream --- output filestream or stringstream for the errorlog to be passed, if any parsing errors are encountered
+- codingTypes --- list of feature types where a non-'.' phase value is expected, passed along to lineAnalysis
+- metaTypes --- list of metadata feature types. Features of this type will be affected by the remaining arguments
+- suppressMeta --- Suppress metadata fields. Integer value, where: 
+  - 0 == no suppression, all metadata from features and pragmas will be read and output to the SeqRecord as .annotation entries.
+  - 1 == As above, but metadata features will not be entered into the SeqRecord's feature list after their metadata is recorded and entered into the SeqRecord.annotation
+  - 2 == Total suppression, no metadata features will even be processed, and no pragmas except those related to sequence length (##FASTA and ##sequence-region) and ##gff-version (required by GFF spec) will be utilized.
+- pragmaPriority --- In cases where pragmas and metadata features disagree/conflict, pragmas will take precedence for creating SeqRecord.annotation value if true, else the feature will.
+- pragmaOverridePriority --- Similar to above, in the event of a conflict between metadata features and pragmas, the pragma's value will override the metadata gffSeqFeature.qualifier value with the pragma's own. This will force the metadata and pragmas to sync, and avoid future discrepancies. Should only be used with pragmaPrority also set to True
 
+### CPT_GFFParser.gffWrite
+The primary function for writing out GFF files. 
+
+`gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True, codingTypes = \["CDS"], metaTypes = \["remark"], validPragmas = None, recPriority = True, createMetaFeat=None)`
+- inRec --- The input, can either be one SeqRecord object or a list of them. Expects the features to be of gffSeqFeature type, if working with a vanilla Biopython record (For example, after having used SeqIO to read in a Genbank file), please see `gffSeqFeature.convertSeqRec` below.
+- outStream --- The output location, can be a file handle, stringstream, or anything else with a .write method implemented.
+- suppressMeta --- Suppress metadata fields. Integer value, where: 
+  - 0 == no suppression, all metadata from features of a type in metaTypes and annotations from SeqRecord.annotation will be read and output to the GFF as ##pragma entries, where the key will be the pragma and the values will be joined by " " and output on the same line (newlines replaced by " ").
+  - 1 == As above, but metadata features will not be written out to file after their annotation information is retrieved.
+  - 2 == Total suppression, no metadata features or SeqRecord.annotations will even be processed, and no pragmas or metadata features will be in the final output. The two exceptions are at least one ##gff-version pragma will be created at the first line, as per the GFF spec requirements, and if a FASTA is supplied and suppressFasta is set to False, a ##FASTA directive and corresponding sequence(s) will be created at the end of the file.
+- suppressFasta --- If True, do not write the Fasta sequences of this SeqRecord list at the end of the GFF
+- codingTypes --- A list of feature types where an integer is expected in the phase field, even if that integer would be the default value of 0. Features of types not in this list will have their phase written as the default "." empty value IF their .phase is 0.
+- metaTypes --- A list of feature types that are metadata information. Features of these types will have their qualifiers counted as annotations, and they will be affected by the actions of suppressMeta above. 
+- validPragmas --- A whitelist of pragmas to output, in cases where some, but not all, annotations would be desired. Setting to None will allow allow all annotations. Setting to empty list will allow no annotations (Except as discussed above in suppressMeta, where #gff-version and ##FASTA are compulsory). Note that this affects pragmas only, and metadata *features* will not be affected by a choice here.
+- recPriority --- In cases where a SeqRecord.annotation and a qualifier in a metadata feature conflict, the SeqRecord will take priority if set to true, otherwise the metadata feature will.
+- creatMetaFeat --- A string input, where if it is set to None then no metadata feature will be created, otherwise a metadata feature of that type will be created, and all annotations wil be written out as its qualifiers. For example, createMetaFeat="remark" will cause a feature of type remark to be created with appropriate FeatureLocation and qualifiers. If there already exists a feature of that type in the output, then that feature will simply be updated.
+- 
 ### gffSeqFeature.gffSeqFeature
 
 ### gffSeqFeature.convertSeqRec
@@ -44,6 +73,10 @@ GFFParse and GFFWrite were initially released at the end of Summer, 2020 on the 
 ## Credits
 Center for Phage Technology,
 Anthony Criscione, 2020-2021
+
+Distributed under the BSD 3-Clause license, included in the LICENSE file of this same directory
+
+gffSeqFeature developed in accordance with the Biopython License Agreement, and similarly licensed under the BSD 3-Clause License
 
 ## Contact Us
 For issues directly related to coding errors or other library problems, we encourage you to submit an issue via the issues tab above. Please provide relevant information such as error messages, function arguments, and input data.
