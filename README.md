@@ -44,3 +44,8 @@ GFFParse and GFFWrite were initially released at the end of Summer, 2020 on the 
 ## Credits
 Center for Phage Technology,
 Anthony Criscione, 2020-2021
+
+## Contact Us
+For issues directly related to coding errors or other library problems, we encourage you to submit an issue via the issues tab above. Please provide relevant information such as error messages, function arguments, and input data.
+
+For other inquiries, contact info for the Center for Phage Technology can be found at cpt.tamu.edu
