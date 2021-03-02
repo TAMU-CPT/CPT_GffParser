@@ -4,6 +4,10 @@ An extensively featured Python parser for GFF format reading and writing
 ##### Table of Contents  
 [Need](#Need)  
 [Goals](#Goals)  
+[Release](#Release)  
+[library-contents](#library-contents)  
+[Credit](#Credit)  
+[Contact Us](#contact-us)  
     
 
 ## Need
