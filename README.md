@@ -1,6 +1,11 @@
 # CPT_GFFParser
 An extensively featured Python parser for GFF format reading and writing
 
+##### Table of Contents  
+[Need](#Need)  
+[Goals](#Goals)  
+    
+
 ## Need
 The Center for Phage Technology uses the Generic Feature Format extensively in our analysis, and Biopython is the most extensively integrated library within our own codebase. Unfortunately, the GFF format is not directly supported by Biopython, and as development of that project continued, we were no longer able to find an acceptable community solution to our need to support the GFF format. We encountered 2 main obstacles to implementing outside solutions: 
 1. Biopython compatibility
