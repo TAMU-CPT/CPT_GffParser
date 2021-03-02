@@ -34,7 +34,7 @@ gffParse and gffWrite were initially released at the end of Summer, 2020 on the 
 ### CPT_GFFParser.gffParse
 The primary function for reading in GFF files. Will return a list of SeqRecord objects, with gffSeqFeature objects as their .feature lists.
 
-`gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=\["CDS"], metaTypes = \["remark"], suppressMeta = 2, pragmaPriority = True, pragmaOverridePriority = True):`
+`gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"], metaTypes = ["remark"], suppressMeta = 2, pragmaPriority = True, pragmaOverridePriority = True):`
 - gff3In --- source file handle
 - base_dict --- Additional SeqRecord information. Keys are OrganismIDs and values are SeqRecords. For BCBio backwards compatibility.
 - outStream --- output filestream or stringstream for the errorlog to be passed, if any parsing errors are encountered
@@ -50,7 +50,7 @@ The primary function for reading in GFF files. Will return a list of SeqRecord o
 ### CPT_GFFParser.gffWrite
 The primary function for writing out GFF files. 
 
-`gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True, codingTypes = \["CDS"], metaTypes = \["remark"], validPragmas = None, recPriority = True, createMetaFeat=None)`
+`gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True, codingTypes = ["CDS"], metaTypes = ["remark"], validPragmas = None, recPriority = True, createMetaFeat=None)`
 - inRec --- The input, can either be one SeqRecord object or a list of them. Expects the features to be of gffSeqFeature type, if working with a vanilla Biopython record (For example, after having used SeqIO to read in a Genbank file), please see `gffSeqFeature.convertSeqRec` below.
 - outStream --- The output location, can be a file handle, stringstream, or anything else with a .write method implemented.
 - suppressMeta --- Suppress metadata fields. Integer value, where: 
@@ -63,12 +63,37 @@ The primary function for writing out GFF files.
 - validPragmas --- A whitelist of pragmas to output, in cases where some, but not all, annotations would be desired. Setting to None will allow allow all annotations. Setting to empty list will allow no annotations (Except as discussed above in suppressMeta, where #gff-version and ##FASTA are compulsory). Note that this affects pragmas only, and metadata *features* will not be affected by a choice here.
 - recPriority --- In cases where a SeqRecord.annotation and a qualifier in a metadata feature conflict, the SeqRecord will take priority if set to true, otherwise the metadata feature will.
 - creatMetaFeat --- A string input, where if it is set to None then no metadata feature will be created, otherwise a metadata feature of that type will be created, and all annotations wil be written out as its qualifiers. For example, createMetaFeat="remark" will cause a feature of type remark to be created with appropriate FeatureLocation and qualifiers. If there already exists a feature of that type in the output, then that feature will simply be updated.
-- 
+
 ### gffSeqFeature.gffSeqFeature
+A subclass of SeqFeature. Minimal editing has been done to it, so it should still be largely compatible with any operations that are done on a regular SeqFeature. However the sub_features property has been reimplemented, so care must be taken that analysis done on "top-level" features cascades down to sub-features, if need be. See the documentation on Biopython's SeqFeature for most needs, only the differences are discussed here:
+
+`gffSeqFeature(SeqFeature.SeqFeature):
+    def __init__(self, location=None, type="", location_operator="", strand=None, id="<unknown id>", qualifiers=None, sub_features=None, ref=None, ref_db=None, phase=0, score=0.0, source="feature"):`
+Three new fields have been appended, phase, score, and source, columns 8, 6, and 2 respectively in GFF output. All three can be accessed as .properties of a gffSeqFeature object. Additionally, sub_features will now accept a list of gffSeqFeatures as input, rather than informing the user this feature has been deprecated.
+
+`    def _shift(self, offset):`
+Behaves identically to \_shift in a SeqFeature object, but reimplemented because the output has to be explicitly cast as a gffSeqFeature.
+
+`    def translate(self, parent_sequence, table="Standard", start_offset=None, stop_symbol="*", to_stop=False, cds=None, gap=None):`
+Behaves identically to regular SeqFeature, except the .phase property is checked along with seeing if there's a codon_start qualifier. start_offset will still override both, and codon_start will take precedence over .phase
 
 ### gffSeqFeature.convertSeqRec
+A function for converting the members of a SeqRecord's SeqFeature list into gffSeqFeature objects. Will output a list of SeqRecord objects. If your input file was not a GFF then you probably want to run this before sending your SeqRecord to gffWrite. Will attempt to pair "source", "codon_start", "score" and "Parent" qualifiers in a SeqFeature with the appropriate gffSeqFeature property.
+
+As long your SeqFeature objects have "Parent" qualifiers whose value corresponds to the .id property of another SeqFeature in the list, then it will correctly construct a heirarchy. Note that this script will fail if you construct a series of features that parent each other in a loop or cycle, or if you create a feature who lists itself as a Parent (self-loop). These qualifiers are allowed in Biopython because there is no formal heirarchy, but GFF must enforce it.
+
+`convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True, createMetaFeat = None):`
+- inRec --- A seqRecord or list of SeqRecords to have their features converted.
+- defaultSource --- A string input for the source field of the gffSeqFeature (column 2 in GFF output). If a "source" qualifier is present in the feature, that will be used instead.
+- deriveSeqRegion --- If True, the script will derive a ##sequence-region pragma/annotation based off of the "largest" FeatureLocation.end encountered while reading the features in. It will then add this key/value to the SeqRecord.annotation dictionary. 
+- createMetaFeat --- A string input, where if it is set to None then no metadata feature will be created, otherwise a metadata feature of that type will be created, and all annotations wil be written out as its qualifiers. For example, createMetaFeat="remark" will cause a feature of type remark to be created with appropriate FeatureLocation and qualifiers. If there already exists a feature of that type in the output, then that feature will simply be updated.
 
 ### gffSeqFeature.convertSeqFeat
+Primarily used by gffSeqFeature.convertSeqRec, but can be accessed as a standalone function if there is a need to convert only individual features detached from a SeqRecord object.
+
+`convertSeqFeat(inFeat, defaultSource = "gffSeqFeature"):`
+- inFeat --- A single FeatureLocation object
+- defaultSource --- If there is no "source" qualifier in this feature's qualifiers, this string will be set as the source (column 2 in GFF output)
 
 ## Credits
 Center for Phage Technology,
