@@ -106,9 +106,9 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
       possibleCodingError = True
       # Try to resolve after qualifiers are read in, allow codon_start to supply this value
     if fields[7] == '.':
-      shiftIn = 0
+      phaseIn = 0
     else:
-      shiftIn = int(fields[7])
+      phaseIn = int(fields[7])
 
     # fields[8]
 
@@ -184,7 +184,7 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
         IDName = qualDict[x][0]
       if x == "codon_start":
         if fields[7] == ".":
-          shiftIn = int(qualDict[x][0])
+          phaseIn = int(qualDict[x][0])
           possibleCodingError = False
         # Else error? Is overriding a value of 0 desirable?
  
@@ -207,14 +207,14 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
      
     if errorMessage != "":
       return errorMessage, None, None
-    return None, fields[0], gffSeqFeature(featLoc, fields[2], '', featLoc.strand, IDName, qualDict, None, None, None, shiftIn, scoreIn, fields[1])   
+    return None, fields[0], gffSeqFeature(featLoc, fields[2], '', featLoc.strand, IDName, qualDict, None, None, None, phaseIn, scoreIn, fields[1])   
         
 def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"], metaTypes = ["remark"], suppressMeta = 2, pragmaPriority = True, pragmaOverridePriority = True):
     # gff3In --- source file
     # base_dict --- file with additional SeqRecord information. Keys are OrganismIDs and values are SeqRecords.
     #               For BCBio backwards compatibility.
     # outStream --- output filestream or stringstream
-    # codingTypes --- list of feature types where a non-'.' shift value is expected, passed along to lineAnalysis
+    # codingTypes --- list of feature types where a non-'.' phase value is expected, passed along to lineAnalysis
     # metaTypes --- list of metadata feature types. Features of this type will be affected by the remaining arguments
     # suppressMeta --- Suppress metadata fields. Int, where 0 == no suppression, all metadata from features and pragmas 
     #                  will be read and output to the SeqRecord as .annotation entries.
@@ -453,7 +453,7 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
   
     return res
 
-def printFeatLine(inFeat, orgName, source = 'feature', score = None, shift = None, outStream = sys.stdout, parents = None, codingTypes = ["CDS"]):
+def printFeatLine(inFeat, orgName, source = 'feature', score = None, phase = None, outStream = sys.stdout, parents = None, codingTypes = ["CDS"]):
     for loc in inFeat.location.parts:
       line = orgName + "\t"
       if source:
@@ -481,12 +481,12 @@ def printFeatLine(inFeat, orgName, source = 'feature', score = None, shift = Non
       else: 
         line += "?\t"
       if inFeat.type in codingTypes: 
-        if shift or shift == 0:
-          line += str(shift) + "\t"
+        if phase or phase == 0:
+          line += str(phase) + "\t"
         else:
           line += "0\t"
-      elif shift != 0:
-        line += str(shift) + "\t"
+      elif phase != 0:
+        line += str(phase) + "\t"
       else:
         line += ".\t"
       if parents and "Parent" not in inFeat.qualifiers.keys():
@@ -516,7 +516,7 @@ def printFeatLine(inFeat, orgName, source = 'feature', score = None, shift = Non
       outStream.write(line + "\n")  
     if type(inFeat) == gffSeqFeature and inFeat.sub_features: 
       for x in inFeat.sub_features:
-        printFeatLine(x, orgName, x.source, x.score, x.shift, outStream, inFeat)
+        printFeatLine(x, orgName, x.source, x.score, x.phase, outStream, inFeat)
 
 def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True, codingTypes = ["CDS"], metaTypes = ["remark"], validPragmas = None, recPriority = True, createMetaFeat=None):
 
@@ -582,12 +582,12 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
         
         if not foundMeta:
           tempSeq = gffSeqFeature(FeatureLocation(0, len(rec.seq), 0), createMetaFeat, '', 0, 0, outList, None, None, None, '.', '.', "CPT_GFFParse") 
-          printFeatLine(tempSeq, rec.id, source = tempSeq.source, score = tempSeq.score, shift = tempSeq.shift, outStream = outStream)
+          printFeatLine(tempSeq, rec.id, source = tempSeq.source, score = tempSeq.score, phase = tempSeq.phase, outStream = outStream)
 
       for feat in rec.features:
           if suppressMeta > 0 and feat.type in metaTypes:
             continue  
-          printFeatLine(feat, rec.id, source = feat.source, score = feat.score, shift = feat.shift, outStream = outStream)   
+          printFeatLine(feat, rec.id, source = feat.source, score = feat.score, phase = feat.phase, outStream = outStream)   
       firstRec = False 
     if writeFasta and not suppressFasta:
       outStream.write("##FASTA\n")

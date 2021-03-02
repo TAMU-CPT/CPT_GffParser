@@ -23,7 +23,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         sub_features=None,
         ref=None,
         ref_db=None,
-        shift=0,
+        phase=0,
         score=0.0,
         source="feature"
     ):
@@ -41,7 +41,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
             )
         self.location = location
         self.type = type
-        self.shift = shift
+        self.phase = phase
         self.score = score
         self.source = source
         if location_operator:
@@ -100,7 +100,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
             id=self.id,
             qualifiers=OrderedDict(self.qualifiers.items()),
             sub_features=self.sub_features,
-            shift=self.shift,
+            phase=self.phase,
             score=self.score,
             source=self.source
         )
@@ -117,11 +117,11 @@ class gffSeqFeature(SeqFeature.SeqFeature):
     ):
         """
           Identical to the implementation found in 
-          Biopython SeqFeature, but will use .shift value instead
+          Biopython SeqFeature, but will use .phase value instead
           if start_offset is not set and start_codon is not present
 
           Deferred to codon_start under reasoning that some bioinformatic scripts
-          may edit the codon_start field, but not change the .shift value
+          may edit the codon_start field, but not change the .phase value
         """
         # see if this feature should be translated in a different
         # frame using the "codon_start" qualifier
@@ -129,14 +129,14 @@ class gffSeqFeature(SeqFeature.SeqFeature):
             try:
                 start_offset = int(self.qualifiers["codon_start"][0]) - 1
             except KeyError:
-                start_offset = self.shift
+                start_offset = self.phase
 
         if start_offset not in [0, 1, 2]:
             raise ValueError(
                 "The start_offset must be 0, 1, or 2. "
                 f"The supplied value is {start_offset}. "
                 "Check the value of either the codon_start qualifier, "
-                "the .shift property, or the start_offset argument"
+                "the .phase property, or the start_offset argument"
             )
 
         feat_seq = self.extract(parent_sequence)[start_offset:]
@@ -162,9 +162,9 @@ def convertSeqFeat(inFeat, defaultSource = "gffSeqFeature"):
     if x == inFeat.id: # Cannot allow self-loops
       raise Exception("Cannot convert SeqRecord, feature %s lists itself as a parent feature" % (cand.id))
   if "codon_start" in inFeat.qualifiers.keys():
-    shiftIn = int(inFeat.qualifiers["codon_start"][0])
+    phaseIn = int(inFeat.qualifiers["codon_start"][0])
   else:
-    shiftIn = 0
+    phaseIn = 0
   if "score" in inFeat.qualifiers.keys():
     scoreIn = float(inFeat.qualifiers["score"][0])
   else:
@@ -174,7 +174,7 @@ def convertSeqFeat(inFeat, defaultSource = "gffSeqFeature"):
   else:
     sourceIn = defaultSource 
 
-  return gffSeqFeature(featLoc, inFeat.type, '', featLoc.strand, IDName, qualDict, [], None, None, shiftIn, scoreIn, sourceIn)
+  return gffSeqFeature(featLoc, inFeat.type, '', featLoc.strand, IDName, qualDict, [], None, None, phaseIn, scoreIn, sourceIn)
 
 def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True, createMetaFeat = None):
   # Assumes an otherwise well-constructed SeqRecord that just wants to replace its features with gffSeqFeatures
