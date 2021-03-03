@@ -293,12 +293,13 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
           finalOrg = rAddDict(finalOrg, orgDict)
           seekParentDict = {}
           orgDict = {}   
-        elif prag[0] in pragmaAnnotesDict.keys():
-          dictVal = " ".join(prag[1:])
-          pragmaAnnotesDict[prag[0]].append([dictVal])
-        else:
-          dictVal = " ".join(prag[1:])
-          pragmaAnnotesDict[prag[0]] = [[dictVal]]
+        elif suppressMeta < 2: 
+          if prag[0] in pragmaAnnotesDict.keys():
+            dictVal = " ".join(prag[1:])
+            pragmaAnnotesDict[prag[0]].append([dictVal])
+          else:
+            dictVal = " ".join(prag[1:])
+            pragmaAnnotesDict[prag[0]] = [[dictVal]]
       ### Feature Handling
       if res:
         if suppressMeta == 2 and res.type in metaTypes:
@@ -375,7 +376,7 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
     # annotation or sequence associations
 
     for x in regionDict.keys():
-      if seqDict[x] != "":   
+      if x in seqDict.keys() and seqDict[x] != "": ## If x not in SeqDict, then a sequence-region pragma was made for organism with no features
         regionDict[x] = (0, len(seqDict[x]), 1)  # Make FASTA the final arbiter of region if present
     for x in regionDict.keys():
       if regionDict[x][2] == -1:
