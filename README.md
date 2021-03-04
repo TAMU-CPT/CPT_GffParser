@@ -49,7 +49,7 @@ gffParse and gffWrite were initially released at the end of Summer, 2020 on the 
 The primary function for reading in GFF files. Will return a list of SeqRecord objects, with gffSeqFeature objects as their .feature lists.
 
 `gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"], metaTypes = ["remark"], suppressMeta = 2, pragmaPriority = True, pragmaOverridePriority = True):`
-- gff3In --- source file handle
+- gff3In --- source file handle, will accept any object that implements a .readlines() method or other list-like access to file lines
 - base_dict --- Additional SeqRecord information. Keys are OrganismIDs and values are SeqRecords. For BCBio backwards compatibility.
 - outStream --- output filestream or stringstream for the errorlog to be passed, if any parsing errors are encountered
 - codingTypes --- list of feature types where a non-'.' phase value is expected, passed along to lineAnalysis
