@@ -65,7 +65,7 @@ def writeMetaQuals(qualList):
         else:
           outLines += " %s" % (str(qualList[x]).replace("\n", " "))
         outLines += "\n"
-    return outLines    
+    return outLines  
 
 def validateID(idIn):
     badChar = []
@@ -196,6 +196,4 @@ def qualsToAnnotes(inDict, feat, orgID):
             outStr = outStr[outStr.find(" ") + 1:-1]
           inDict[x].append([outStr, orgID])
   return inDict  
-
-
 
