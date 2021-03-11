@@ -5,18 +5,17 @@
 
 # A collection of helper functions for use with the main GFF IO functions
 
+import sys
+from collections import OrderedDict
+try:
+    from collections.abc import Iterable
+except:
+    from collections import Iterable
 from Bio import SeqIO, SeqFeature
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
 from Bio.Seq import Seq, UnknownSeq
-from collections import OrderedDict
-try:
-  from collections.abc import Iterable
-except:
-  from collections import Iterable
-from gffSeqFeature import *
-
-import sys
+from cptgffparser.gffSeqFeature import *
 
 disallowArray = ["&", ",", ";", "="]
 validArray = ["%26", "%2C", "%3B", "%3D"]
@@ -24,19 +23,19 @@ encoders = "ABCDEF1234567890"
 
 validID = '.:^*$@!+_?-|'
 
-def writeMetaQuals(qualList): 
+def writeMetaQuals(qualList):
     outLines = ""
     for x in qualList.keys():
       if x == "sequence-region":
         try:
           if isinstance(qualList[x], str):
             if qualList[x][0] == "(" and qualList[x][-1] == ")":
-              fields = (qualList[x][1:-1]).split(" ") 
+              fields = (qualList[x][1:-1]).split(" ")
             else:
               fields = qualList[x].split(" ")
             if len(fields[0]) > 2 and fields[0][0] in ["'", '"'] and fields[0][0] == fields[0][-1]:
               fields[0] = fields[0][1:-1]
-          
+
             if "%" in fields[1]:
               fields[1] = int(fields[1][:fields[1].find("%")])
             elif "," in fields[1]:
@@ -54,7 +53,7 @@ def writeMetaQuals(qualList):
           outLines += "##sequence-region %s %d %d\n" % (fields[0], fields[1], fields[2])
         except:
           sys.stderr.write("Annotation Error: Unable to parse sequence-region in metadata feature. Value was %s" % (qualList[x]))
-        
+
       elif x != "gff-version":
         outLines += "##%s" % (x)
         if isinstance(qualList[x], str):
@@ -65,7 +64,7 @@ def writeMetaQuals(qualList):
         else:
           outLines += " %s" % (str(qualList[x]).replace("\n", " "))
         outLines += "\n"
-    return outLines  
+    return outLines
 
 def validateID(idIn):
     badChar = []
@@ -75,7 +74,7 @@ def validateID(idIn):
       else:
         if not(x in badChar):
           badChar.append(x)
-    return badChar 
+    return badChar
 
 def replaceBadChars(qualIn):
     newQual = ""
@@ -95,7 +94,7 @@ def validateQual(qualIn):
       if x in disallowArray:
         if not(x in badChar):
           badChar.append(x)
-    return badChar 
+    return badChar
 
 def rAddDict(lDict, rDict):
     for x in rDict.keys():
@@ -113,7 +112,7 @@ def checkCycle(orgDict):
            badOrgs[org].append(feat.id)
         else:
            badOrgs[org] = [feat.id]
-          
+
   return badOrgs
 
 def resolveParent(orgDict, indexDict):
@@ -159,7 +158,7 @@ def encodeFromLookahead(remLine):
     return True # x == newline or EOF
 
 def isNum(evalString):
-  for x in range(0, len(evalString)): 
+  for x in range(0, len(evalString)):
     if not(ord(evalString[x]) > 47 and ord(evalString[x]) < 58):
       return False
   return True
@@ -173,7 +172,7 @@ def qualsToAnnotes(inDict, feat, orgID):
           if x == "gff-version":
             outStr = feat.qualifiers[x][0]
           else:
-            continue  
+            continue
         else:
           outStr = outStr[outStr.find(" ") + 1:-1]
         inDict[x] = [[outStr, orgID]]
@@ -183,7 +182,7 @@ def qualsToAnnotes(inDict, feat, orgID):
           for val in inDict[pragma]:
             if orgID in val[1:]:
               contains = True
-              break 
+              break
         if not contains:
           dictVal = " ".join(feat.qualifiers[x])
           outStr = writeMetaQuals({x: dictVal})
@@ -191,9 +190,9 @@ def qualsToAnnotes(inDict, feat, orgID):
             if x == "gff-version":
               outStr = feat.qualifiers[x][0]
             else:
-              continue 
+              continue
           else:
             outStr = outStr[outStr.find(" ") + 1:-1]
           inDict[x].append([outStr, orgID])
-  return inDict  
+  return inDict
 

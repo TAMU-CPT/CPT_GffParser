@@ -2,10 +2,10 @@
 import argparse
 import logging
 import sys
-from CPT_GFFParser import gffParse, gffWrite
-from gffSeqFeature import convertSeqRec
 from Bio.Seq import Seq, UnknownSeq
 from Bio import SeqIO
+from cptgffparser.CPT_GFFParser import gffParse, gffWrite
+from cptgffparser.gffSeqFeature import convertSeqRec
 
 
 if __name__ == '__main__':
@@ -20,10 +20,10 @@ if __name__ == '__main__':
         featList.append(y)
         for z in y.sub_features:
           featList.append(z)
-          
+
     for x in featList:
       x.sub_features = []
     recs[0].features = featList
     recs = convertSeqRec(recs, defaultSource = "ConvertSeqRec")
-    
+
     gffWrite(recs, suppressMeta = 0, createMetaFeat="remark")
