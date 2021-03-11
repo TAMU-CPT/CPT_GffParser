@@ -5,18 +5,17 @@
 
 # A collection of helper functions for use with the main GFF IO functions
 
+import sys
+from collections import OrderedDict
+try:
+    from collections.abc import Iterable
+except:
+    from collections import Iterable
 from Bio import SeqIO, SeqFeature
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
 from Bio.Seq import Seq, UnknownSeq
-from collections import OrderedDict
-try:
-  from collections.abc import Iterable
-except:
-  from collections import Iterable
-from gffSeqFeature import *
-
-import sys
+from cptgffparser.gffSeqFeature import *
 
 disallowArray = ["&", ",", ";", "="]
 validArray = ["%26", "%2C", "%3B", "%3D"]

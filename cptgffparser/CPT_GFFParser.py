@@ -9,8 +9,8 @@ from Bio.Seq import Seq, UnknownSeq
 from collections import OrderedDict
 from Bio.SeqRecord import SeqRecord
 
-from CPT_ParserHelpers import *
-from gffSeqFeature import *
+from cptgffparser.CPT_ParserHelpers import *
+from cptgffparser.gffSeqFeature import *
 import sys
 
 #Try/Except blocks used for limited python 2.7 compatibility. Python3 spec is within the try block
@@ -224,7 +224,6 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
 
     fastaDirective = False # Once true, must assume remainder of file is a FASTA, per spec
     errOut = ""
-    warnOut = ""
     lineInd = 0
     pragmaAnnotesDict = {} # Annotations dictionaries, one for ones derived via pragmas and another for ones derived from meta features
     metaAnnotesDict = {}   # Keys are annotation title, values are a list of lists, where the first entry in a list is the value, and
