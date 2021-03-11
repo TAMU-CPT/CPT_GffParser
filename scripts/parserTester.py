@@ -2,10 +2,10 @@
 import argparse
 import logging
 import sys
-from CPT_GFFParser import gffParse, gffWrite
-from gffSeqFeature import convertSeqRec
 from Bio.Seq import Seq, UnknownSeq
 from Bio import SeqIO
+from cptgffparser.CPT_GFFParser import gffParse, gffWrite
+from cptgffparser.gffSeqFeature import convertSeqRec
 
 
 if __name__ == '__main__':
