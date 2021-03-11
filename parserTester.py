@@ -20,10 +20,10 @@ if __name__ == '__main__':
         featList.append(y)
         for z in y.sub_features:
           featList.append(z)
-          
+
     for x in featList:
       x.sub_features = []
     recs[0].features = featList
     recs = convertSeqRec(recs, defaultSource = "ConvertSeqRec")
-    
+
     gffWrite(recs, suppressMeta = 0, createMetaFeat="remark")

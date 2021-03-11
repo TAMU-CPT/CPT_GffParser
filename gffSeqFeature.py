@@ -92,7 +92,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         The annotation qaulifiers are copied.
         """
         for x in self.sub_features:
-          x._shift(offset)  
+          x._shift(offset)
         return gffSeqFeature(
             location=self.location._shift(offset),
             type=self.type,
@@ -116,7 +116,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         gap=None,
     ):
         """
-          Identical to the implementation found in 
+          Identical to the implementation found in
           Biopython SeqFeature, but will use .phase value instead
           if start_offset is not set and start_codon is not present
 
@@ -167,7 +167,7 @@ def convertSeqFeat(inFeat, defaultSource = "gffSeqFeature"):
   if "source" in inFeat.qualifiers.keys():
     sourceIn = inFeat.qualifiers["source"][0]
   else:
-    sourceIn = defaultSource 
+    sourceIn = defaultSource
 
   return gffSeqFeature(featLoc, inFeat.type, '', featLoc.strand, IDName, qualDict, [], None, None, phaseIn, scoreIn, sourceIn)
 
@@ -175,9 +175,9 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
   # Assumes an otherwise well-constructed SeqRecord that just wants to replace its features with gffSeqFeatures
   if not isinstance(inRec, list):
     inRec = [inRec]
-  
+
   outRec = []
-  for rec in inRec: 
+  for rec in inRec:
     topList = []
     childList = []
     lastCount = 0
@@ -191,7 +191,7 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
       maxLoc = max(maxLoc, feat.location.end)
     if deriveSeqRegion:
       rec.annotations["sequence-region"] = "%s 1 %s" % (rec.id, str(maxLoc))
-    
+
     popList = []
     thisCount = -1
     while lastCount != thisCount:
@@ -213,14 +213,14 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
       if thisCount != lastCount:
         popList = []
         lastCount = thisCount
-        thisCount = 0 
-    
+        thisCount = 0
+
     lastCount = -1
     thisCount = -1
     while lastCount != 0: # This shouldn't need to actually loop
       thisCount = 0
       popList = []
-      for child in childList: 
+      for child in childList:
         foundItem = child[1]
         for cand in topList:
           if foundItem > 0:
@@ -237,7 +237,7 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
       if thisCount != 0:
         popList = []
         lastCount = thisCount
-        thisCount = 0 
+        thisCount = 0
       elif thisCount == lastCount or thisCount > 0:
         badIDs = []
         for x in childList:
@@ -245,7 +245,7 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
         outStr = ", ".join(badIDs)
         sys.stderr.write("Unable to convert SeqRecord %s: could not find parents for features [%s]\n" % (rec.id, outStr))
         sys.stderr.write("Note that this error will also occur if sub_feature relationships between features ever form a cycle/loop.\n")
-        raise Exception("Could not convert features of SeqRecord %s to gffSeqFeature format, see stderr\n" % (rec.id)) 
+        raise Exception("Could not convert features of SeqRecord %s to gffSeqFeature format, see stderr\n" % (rec.id))
       else:
         break
 
