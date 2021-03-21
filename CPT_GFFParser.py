@@ -551,8 +551,10 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
         if "gff-version" in outList.keys() and outList["gff-version"] != verOut:
           verOut = outList["gff-version"]
           outStream.write("##gff-version %s\n" % verOut)
+          firstRec = False
         elif firstRec:
           outStream.write("##gff-version %s\n" % verOut)
+          firstRec = False
         if validPragmas == None:
           outStr = writeMetaQuals(outList)
         else:
