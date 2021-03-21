@@ -180,6 +180,7 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
   for rec in inRec: 
     topList = []
     childList = []
+    noPairList = [] # Features with no ID that shouldn't be analyzed for sub-feature relations
     lastCount = 0
     maxLoc = 0
     for feat in rec.features:
@@ -188,15 +189,17 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
         lastCount += childList[-1][1]
       elif feat.id and feat.id != "<unknown id>": # Do not accept the default value
         topList.append(convertSeqFeat(feat, defaultSource))
+      else:
+        noPairList.append(feat)
       maxLoc = max(maxLoc, feat.location.end)
     if deriveSeqRegion:
       rec.annotations["sequence-region"] = "%s 1 %s" % (rec.id, str(maxLoc))
     
-    popList = []
-    thisCount = -1
-    while lastCount != thisCount:
-      thisCount = 0
-      for child in childList: # Check for subfeatures of subfeatures first
+    rerunList = True
+    while rerunList:
+      rebuildList = False
+      for ind in range(0, len(childList)): # Check for subfeatures of subfeatures first
+        child = childList[ind]
         foundItem = child[1]
         for cand in childList:
           if foundItem > 0:
@@ -204,17 +207,11 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
               if cand[0].id == childID:
                 cand[0].sub_features.append(child[0])
                 foundItem -= 1
+                childList[ind] = (child[0], foundItem)
+                rerunList = True
           elif foundItem == 0:
             break
-        if foundItem > 0:
-          popList.append((child[0], foundItem))
-          thisCount += popList[-1][1]
-      childList = popList
-      if thisCount != lastCount:
-        popList = []
-        lastCount = thisCount
-        thisCount = 0 
-    
+      
     lastCount = -1
     thisCount = -1
     while lastCount != 0: # This shouldn't need to actually loop
@@ -264,3 +261,9 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
     rec.features = topList
     outRec.append(rec)
   return outRec
+      
+     
+      
+        
+                 
+     
