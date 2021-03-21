@@ -229,6 +229,9 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
     #                            value will override the metadata gffSeqFeature.qualifier value with the pragma's own. This will force
     #                            the metadata and pragmas to sync, and avoid future discrepancies. Should only be used with pragmaPrority 
  
+    if hasattr(gff3In, 'readlines') and callable(getattr(gff3In, 'readlines')):
+      gff3In = gff3In.readlines()
+
     fastaDirective = False # Once true, must assume remainder of file is a FASTA, per spec
     errOut = ""
     warnOut = ""
@@ -284,7 +287,7 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
         elif prag[0] == "sequence-region":
           if prag[1] not in regionDict.keys():
             regionDict[prag[1]] = (int(prag[2]) - 1, int(prag[3]), pragBit)
-          elif pragBit > regionDict[prag[1]]:
+          elif pragBit > regionDict[prag[1]][2]:
             regionDict[prag[1]] = (int(prag[2]) - 1, int(prag[3]), pragBit)
         elif prag[0] == "#":
           orgDict, resolveErr = resolveParent(orgDict, seekParentDict)
@@ -293,12 +296,13 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
           finalOrg = rAddDict(finalOrg, orgDict)
           seekParentDict = {}
           orgDict = {}   
-        elif prag[0] in pragmaAnnotesDict.keys():
-          dictVal = " ".join(prag[1:])
-          pragmaAnnotesDict[prag[0]].append([dictVal])
-        else:
-          dictVal = " ".join(prag[1:])
-          pragmaAnnotesDict[prag[0]] = [[dictVal]]
+        elif suppressMeta < 2: 
+          if prag[0] in pragmaAnnotesDict.keys():
+            dictVal = " ".join(prag[1:])
+            pragmaAnnotesDict[prag[0]].append([dictVal])
+          else:
+            dictVal = " ".join(prag[1:])
+            pragmaAnnotesDict[prag[0]] = [[dictVal]]
       ### Feature Handling
       if res:
         if suppressMeta == 2 and res.type in metaTypes:
@@ -375,7 +379,7 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
     # annotation or sequence associations
 
     for x in regionDict.keys():
-      if seqDict[x] != "":   
+      if x in seqDict.keys() and seqDict[x] != "": ## If x not in SeqDict, then a sequence-region pragma was made for organism with no features
         regionDict[x] = (0, len(seqDict[x]), 1)  # Make FASTA the final arbiter of region if present
     for x in regionDict.keys():
       if regionDict[x][2] == -1:
