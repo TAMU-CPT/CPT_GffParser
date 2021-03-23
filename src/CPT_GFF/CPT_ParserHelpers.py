@@ -14,7 +14,7 @@ try:
   from collections.abc import Iterable
 except:
   from collections import Iterable
-from gffSeqFeature import *
+from CPT_GFF.gffSeqFeature import *
 
 import sys
 
