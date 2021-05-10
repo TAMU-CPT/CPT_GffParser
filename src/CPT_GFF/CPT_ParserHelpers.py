@@ -18,8 +18,8 @@ from CPT_GFF.gffSeqFeature import *
 
 import sys
 
-disallowArray = ["&", ",", ";", "="]
-validArray = ["%26", "%2C", "%3B", "%3D"]
+disallowArray = ["&", ",", ";", "=", "\t"]
+validArray = ["%26", "%2C", "%3B", "%3D", "%09"]
 encoders = "ABCDEF1234567890"
 
 validID = '.:^*$@!+_?-|'
@@ -98,6 +98,8 @@ def validateQual(qualIn):
     return badChar 
 
 def rAddDict(lDict, rDict):
+    if lDict == None: return rDict
+    if rDict == None: return lDict
     for x in rDict.keys():
       val = lDict.get(x, [])
       val += rDict[x]

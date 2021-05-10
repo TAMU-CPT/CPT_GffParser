@@ -50,13 +50,17 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         if strand is not None:
             # TODO - Deprecation warning
             self.strand = strand
-        self.id = id
         if qualifiers is None:
             try:
               qualifiers = OrderedDict()
             except:
               qualifiers = {}
         self.qualifiers = qualifiers
+        self._id = id
+        if "ID" in self.qualifiers.keys():
+          self._id = self.qualifiers["ID"][0]
+        elif id != "<unknown id>":
+          self.qualifiers["ID"] = [id]
         if sub_features is None:
             sub_features = []
         self._sub_features = sub_features
@@ -66,6 +70,17 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         if ref_db is not None:
             # TODO - Deprecation warning
             self.ref_db = ref_db
+
+    def _set_id(self, value):
+        # TODO - Add a deprecation warning that the seq should be write only?
+        self._id = value
+        self.qualifiers["ID"] = [value]
+
+    id = property(
+        fget=lambda self: self._id,
+        fset=_set_id,
+        doc="The ID property, syncs with the qualifier field.",
+    )
 
     def _get_subfeatures(self):
         """Get function for the sub_features property (PRIVATE)."""
@@ -180,7 +195,6 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
   for rec in inRec: 
     topList = []
     childList = []
-    noPairList = [] # Features with no ID that shouldn't be analyzed for sub-feature relations
     lastCount = 0
     maxLoc = 0
     for feat in rec.features:
@@ -189,17 +203,15 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
         lastCount += childList[-1][1]
       elif feat.id and feat.id != "<unknown id>": # Do not accept the default value
         topList.append(convertSeqFeat(feat, defaultSource))
-      else:
-        noPairList.append(feat)
       maxLoc = max(maxLoc, feat.location.end)
     if deriveSeqRegion:
       rec.annotations["sequence-region"] = "%s 1 %s" % (rec.id, str(maxLoc))
     
-    rerunList = True
-    while rerunList:
-      rebuildList = False
-      for ind in range(0, len(childList)): # Check for subfeatures of subfeatures first
-        child = childList[ind]
+    popList = []
+    thisCount = -1
+    while lastCount != thisCount:
+      thisCount = 0
+      for child in childList: # Check for subfeatures of subfeatures first
         foundItem = child[1]
         for cand in childList:
           if foundItem > 0:
@@ -207,11 +219,17 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
               if cand[0].id == childID:
                 cand[0].sub_features.append(child[0])
                 foundItem -= 1
-                childList[ind] = (child[0], foundItem)
-                rerunList = True
           elif foundItem == 0:
             break
-      
+        if foundItem > 0:
+          popList.append((child[0], foundItem))
+          thisCount += popList[-1][1]
+      childList = popList
+      if thisCount != lastCount:
+        popList = []
+        lastCount = thisCount
+        thisCount = 0 
+    
     lastCount = -1
     thisCount = -1
     while lastCount != 0: # This shouldn't need to actually loop
@@ -235,7 +253,7 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
         popList = []
         lastCount = thisCount
         thisCount = 0 
-      elif thisCount == lastCount or thisCount > 0:
+      elif thisCount == lastCount:
         badIDs = []
         for x in childList:
           badIDs.append(x[0].id)
@@ -244,7 +262,8 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
         sys.stderr.write("Note that this error will also occur if sub_feature relationships between features ever form a cycle/loop.\n")
         raise Exception("Could not convert features of SeqRecord %s to gffSeqFeature format, see stderr\n" % (rec.id)) 
       else:
-        break
+        lastCount = thisCount
+        
 
     if createMetaFeat:
       qualDict = {}
@@ -261,9 +280,3 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
     rec.features = topList
     outRec.append(rec)
   return outRec
-      
-     
-      
-        
-                 
-     

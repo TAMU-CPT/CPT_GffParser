@@ -39,7 +39,7 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
       errorMessage += "GFF3 is a 9-column tab-separated format, line has %d columns.\n" % (len(fields))
       if len(fields) > 9:
         errorMessage += "Possible unescaped tab in a qualifier field.\n"
-        return errorMessage, None, None
+      return errorMessage, None, None
 
     for x in range(0, len(fields)):
       if fields[x] == "":
@@ -99,12 +99,10 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
       errorMessage += "Feature strand must be '+', '-', '.', or '?', actual value is '%s'.\n" % (fields[6])
     
     # fields[7]
-    possibleCodingError = False
     if fields[7] not in ['.', '0', '1', '2']:
       errorMessage += "Expected 0, 1, 2, or . for Phase field value, actual value is '%s'.\n" % (fields[7])
     elif fields[7] =='.' and fields[1] in codingTypes:
-      possibleCodingError = True
-      # Try to resolve after qualifiers are read in, allow codon_start to supply this value
+      errorMessage += "Expected 0, 1, or 2 in Phase field for %s-type feature, actual value is '%s'.\n" % (fields[1], fields[7])
     if fields[7] == '.':
       phaseIn = 0
     else:
@@ -182,14 +180,6 @@ def lineAnalysis(line, codingTypes = ["CDS"]):
         #if len(qualDict[x]) > 1:
           #errorMessage += "More than one ID supplied for feature.\n"
         IDName = qualDict[x][0]
-      if x == "codon_start":
-        if fields[7] == ".":
-          phaseIn = int(qualDict[x][0])
-          possibleCodingError = False
-        # Else error? Is overriding a value of 0 desirable?
- 
-    if possibleCodingError: # No valid value in phase field, no codon_start, and feature is a type listed in codingTypes
-      errorMessage += "Expected 0, 1, or 2 in Phase field for %s-type feature, actual value is '%s'.\n" % (fields[1], fields[7])  
 
     if startLoc == -1 or endLoc == -1 or (not(fields[6] in '-+.?')):
       errorMessage += "Unable to construct feature location, aborting.\n"
@@ -494,10 +484,13 @@ def printFeatLine(inFeat, orgName, source = 'feature', score = None, phase = Non
       else:
         line += ".\t"
       if parents and "Parent" not in inFeat.qualifiers.keys():
-        inFeat.qualifiers["Parent"] = parents.qualifiers["ID"]
+        if "ID" in parents.qualifiers.keys():
+          inFeat.qualifiers["Parent"] = parents.qualifiers["ID"]
+        else:
+          inFeat.qualifiers["Parent"] = [parents.id]
       for qual in inFeat.qualifiers.keys():
         for keyChar in str(qual):
-          if keyChar in "%,=;":
+          if keyChar in "%,=;\n\t":
             encoded = str(hex(ord(keyChar)))
             line += "%" + encoded[2:].upper()
           else:
@@ -507,7 +500,7 @@ def printFeatLine(inFeat, orgName, source = 'feature', score = None, phase = Non
           inFeat.qualifiers[qual] = [inFeat.qualifiers[qual]]
         for ind in range(0, len(inFeat.qualifiers[qual])):
           for valChar in str(inFeat.qualifiers[qual][ind]):
-            if valChar in "%,=;":
+            if valChar in "%,=;\n\t":
               encoded = str(hex(ord(valChar)))
               line += "%" + encoded[2:].upper()
             else:
@@ -527,6 +520,7 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
     writeFasta = False
     verOut = "3"
     firstRec = True
+    maxInd = 0
 
     if not inRec:
       outStream.write("##gff-version 3\n")
@@ -534,6 +528,10 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
     if type(inRec) != list:
       inRec = [inRec]
     for rec in inRec:
+      for x in rec.features:
+        if "gffSeqFeature" not in str(type(x)):
+          rec = convertSeqRec(rec, defaultSource = "gffSeqFeature", deriveSeqRegion = False)[0]
+          break
       if not isinstance(rec.seq, UnknownSeq):
         writeFasta = True
       
@@ -547,6 +545,7 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
         for feat in rec.features:
           if feat.type in metaTypes:
             metaFeats.append(feat)
+          maxInd = max(maxInd, feat.location.end)
         for feat in metaFeats:
           for x in feat.qualifiers.keys():
             if recPriority == False or x not in outList.keys():
@@ -559,6 +558,11 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
         elif firstRec:
           outStream.write("##gff-version %s\n" % verOut)
           firstRec = False
+        if "sequence-region" in outList.keys():
+          fields = outList["sequence-region"].split(" ")
+          if int(fields[2]) < maxInd:
+            fields[2] = str(int(maxInd))
+            outList["sequence-region"] = " ".join(fields)
         if validPragmas == None:
           outStr = writeMetaQuals(outList)
         else:
