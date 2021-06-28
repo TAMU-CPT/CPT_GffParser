@@ -14,12 +14,12 @@ try:
   from collections.abc import Iterable
 except:
   from collections import Iterable
-from gffSeqFeature import *
+from CPT_GFF.gffSeqFeature import *
 
 import sys
 
-disallowArray = ["&", ",", ";", "="]
-validArray = ["%26", "%2C", "%3B", "%3D"]
+disallowArray = ["&", ",", ";", "=", "\t"]
+validArray = ["%26", "%2C", "%3B", "%3D", "%09"]
 encoders = "ABCDEF1234567890"
 
 validID = '.:^*$@!+_?-|'
