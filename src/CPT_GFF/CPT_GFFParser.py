@@ -9,8 +9,8 @@ from Bio.Seq import Seq, UnknownSeq
 from collections import OrderedDict
 from Bio.SeqRecord import SeqRecord
 
-from CPT_GFF.CPT_ParserHelpers import *
-from CPT_GFF.gffSeqFeature import *
+from CPT_ParserHelpers import *
+from gffSeqFeature import *
 import sys
 
 #Try/Except blocks used for limited python 2.7 compatibility. Python3 spec is within the try block

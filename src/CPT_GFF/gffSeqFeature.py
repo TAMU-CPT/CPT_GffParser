@@ -195,75 +195,57 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
   for rec in inRec: 
     topList = []
     childList = []
+    noIDList = []
     lastCount = 0
+    expectedParents = 0
     maxLoc = 0
     for feat in rec.features:
       if "Parent" in feat.qualifiers.keys():
-        childList.append((convertSeqFeat(feat, defaultSource), len(feat.qualifiers["Parent"]))) # Possible to have more than one parent
-        lastCount += childList[-1][1]
+        childList.append((convertSeqFeat(feat, defaultSource), [])) # Possible to have more than one parent
+        expectedParents += len(feat.qualifiers["Parent"])
+        #lastCount += childList[-1][1]
       elif feat.id and feat.id != "<unknown id>": # Do not accept the default value
         topList.append(convertSeqFeat(feat, defaultSource))
+      else: 
+        noIDList.append()
       maxLoc = max(maxLoc, feat.location.end)
     if deriveSeqRegion:
       rec.annotations["sequence-region"] = "%s 1 %s" % (rec.id, str(maxLoc))
     
-    popList = []
-    thisCount = -1
-    while lastCount != thisCount:
-      thisCount = 0
-      for child in childList: # Check for subfeatures of subfeatures first
-        foundItem = child[1]
-        for cand in childList:
-          if foundItem > 0:
-            for childID in child[0].qualifiers["Parent"]:
-              if cand[0].id == childID:
-                cand[0].sub_features.append(child[0])
-                foundItem -= 1
-          elif foundItem == 0:
-            break
-        if foundItem > 0:
-          popList.append((child[0], foundItem))
-          thisCount += popList[-1][1]
-      childList = popList
-      if thisCount != lastCount:
-        popList = []
-        lastCount = thisCount
-        thisCount = 0 
-    
-    lastCount = -1
-    thisCount = -1
-    while lastCount != 0: # This shouldn't need to actually loop
-      thisCount = 0
-      popList = []
-      for child in childList: 
-        foundItem = child[1]
-        for cand in topList:
-          if foundItem > 0:
-            for childID in child[0].qualifiers["Parent"]:
-              if cand.id == childID:
-                cand.sub_features.append(child[0])
-                foundItem -= 1
-          elif foundItem == 0:
-            break
-        if foundItem > 0:
-          popList.append((child[0], foundItem))
-          thisCount += popList[-1][1]
-      childList = popList
-      if thisCount != 0:
-        popList = []
-        lastCount = thisCount
-        thisCount = 0 
-      elif thisCount == lastCount:
-        badIDs = []
+
+    noEdit = False
+    foundParCount = 0
+    while not noEdit: 
+      noEdit = True
+      for childInd in range(0, len(childList)):
+        for i in childList[childInd][0].qualifiers["Parent"]:
+          nextChild = False
+          for topFeat in topList:
+            checkTree = [topFeat]
+            for parCand in checkTree:
+              nextPar = False
+              checkTree += parCand.sub_features
+              for foundPrior in childList[childInd][1]:
+                if parCand.id == foundPrior:
+                  nextPar = True
+                  break
+              if nextPar:
+                break
+              if i == parCand.id:
+                parCand.sub_features.append(childList[childInd][0])
+                childList[childInd]=(childList[childInd][0], childList[childInd][1] + [i])
+                noEdit = False
+                nextChild = True
+                foundParCount += 1
+                break
+            if nextChild:
+              break
+      if noEdit and foundParCount < expectedParents:  
+        badFeats = ""
         for x in childList:
-          badIDs.append(x[0].id)
-        outStr = ", ".join(badIDs)
-        sys.stderr.write("Unable to convert SeqRecord %s: could not find parents for features [%s]\n" % (rec.id, outStr))
-        sys.stderr.write("Note that this error will also occur if sub_feature relationships between features ever form a cycle/loop.\n")
-        raise Exception("Could not convert features of SeqRecord %s to gffSeqFeature format, see stderr\n" % (rec.id)) 
-      else:
-        lastCount = thisCount
-        
+          if len(x[0].qualifiers["Parent"]) != len(x[1]):
+            badFeats += x.id + ", "
+        sys.stderr.write("Unable to convert SeqRecord %s: could not find parents for features [%s]\n" % (rec.id, badFeats))
 
     if createMetaFeat:
       qualDict = {}
@@ -280,3 +262,9 @@ def convertSeqRec(inRec, defaultSource = "gffSeqFeature", deriveSeqRegion = True
     rec.features = topList
     outRec.append(rec)
   return outRec
+      
+     
+      
+        
+                 
+     
