@@ -72,9 +72,32 @@ class gffSeqFeature(SeqFeature.SeqFeature):
             self.ref_db = ref_db
 
     def _set_id(self, value):
-        # TODO - Add a deprecation warning that the seq should be write only?
+        """Set function for the ID property. Syncs with the ID/Parent qualifiers, and multiple entries are valid in GFF format, so try to replace existing value."""
+        oldID = self._id
         self._id = value
-        self.qualifiers["ID"] = [value]
+        if oldID = "<unknown id>":
+          self.qualifiers["ID"] = [value]
+        elif "ID" in self.qualifiers.keys():
+          foundVal = False
+          for i in range(0, len(self.qualifiers["ID"])):
+            if self.qualifiers["ID"][i] == oldID:
+              foundVal = True 
+              self.qualifiers["ID"][i] = value
+          if not foundVal:
+            self.qualifiers["ID"].append(value)   
+        else:
+          self.qualifiers["ID"] = [value]
+        for feat in self.sub_features:
+          if "Parent" in feat.qualifiers.keys():
+            foundVal = False
+            for i in range(0, len(feat.qualifiers["Parent"])):
+              if feat.qualifiers["Parent"][i] == oldID:
+                foundVal = True 
+                feat.qualifiers["Parent"][i] = value
+            if not foundVal:
+              feat.qualifiers["Parent"].append(value)
+          else:
+            feat.qualifiers["Parent"] = [value]
 
     id = property(
         fget=lambda self: self._id,
