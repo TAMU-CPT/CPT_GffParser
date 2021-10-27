@@ -8,7 +8,7 @@
 from Bio import SeqIO, SeqFeature
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
-from Bio.Seq import Seq, UnknownSeq
+from Bio.Seq import Seq
 from collections import OrderedDict
 try:
   from collections.abc import Iterable

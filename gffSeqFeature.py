@@ -7,7 +7,7 @@
 from Bio import SeqFeature
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
 from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq, UnknownSeq
+from Bio.Seq import Seq
 from collections import OrderedDict
 import sys
 

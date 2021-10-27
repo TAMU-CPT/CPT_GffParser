@@ -5,7 +5,7 @@
 
 from Bio import SeqIO, SeqFeature
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
-from Bio.Seq import Seq, UnknownSeq
+from Bio.Seq import Seq
 from collections import OrderedDict
 from Bio.SeqRecord import SeqRecord
 
@@ -305,7 +305,7 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
           # Process base_dict
           # .seq priority is: ##FASTA directives will always define sequence-region and seq if present (done further down)
           #                   base_dict is next, and will also accept an empty seq, so take care with what's passed in this field
-          #                   Finally, parser will infer an UnknownSeq from either ##sequence-region pragma or the 'last' feature,
+          #                   Finally, parser will infer an None seq from either ##sequence-region pragma or the 'last' feature,
           #                   depending on arguments passed to parser.
           if isinstance(possSeq, SeqRecord):
             if possSeq.seq == None:
@@ -439,12 +439,14 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
         seqDict[x] = str(seqDict[x])
       elif x in regionDict.keys():
         annoteDict["sequence-region"] = "%s %s %s" % (x, regionDict[x][0] + 1, regionDict[x][1])
-        seqDict[x] = str(UnknownSeq(regionDict[x][1] - regionDict[x][0]))
+        seqDict[x] = "" 
       else: # Should actually no longer be reachable
         seqDict[x] = ""
       
-      res.append(SeqRecord(Seq(seqDict[x]), x, "<unknown name>", "<unknown description>", None, finalOrgHeirarchy, annoteDict, None))
-  
+      if seqDict[x] != "":
+        res.append(SeqRecord(Seq(seqDict[x]), x, "<unknown name>", "<unknown description>", None, finalOrgHeirarchy, annoteDict, None))
+      else:
+        res.append(SeqRecord(Seq(None, length = regionDict[x][1] - regionDict[x][0]), x, "<unknown name>", "<unknown description>", None, finalOrgHeirarchy, annoteDict, None))
     return res
 
 def printFeatLine(inFeat, orgName, source = 'feature', score = None, phase = None, outStream = sys.stdout, parents = None, codingTypes = ["CDS"]):
@@ -517,7 +519,7 @@ def printFeatLine(inFeat, orgName, source = 'feature', score = None, phase = Non
 
 def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True, codingTypes = ["CDS"], metaTypes = ["remark"], validPragmas = None, recPriority = True, createMetaFeat=None):
 
-    writeFasta = False
+    writeFasta = {}
     verOut = "3"
     firstRec = True
     maxInd = 0
@@ -532,8 +534,13 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
         if "gffSeqFeature" not in str(type(x)):
           rec = convertSeqRec(rec, defaultSource = "gffSeqFeature", deriveSeqRegion = False)[0]
           break
-      if not isinstance(rec.seq, UnknownSeq):
-        writeFasta = True
+      writeFasta[rec.id] = False
+      try:
+        if len(rec.seq) > 0:
+          writeFasta[rec.id] = True
+        rec.seq[0] # Check for unknown seq
+      except:
+        writeFasta[rec.id] = False
       
       seenList = []
       outList = {}
@@ -599,9 +606,12 @@ def gffWrite(inRec, outStream = sys.stdout, suppressMeta = 1, suppressFasta=True
             continue  
           printFeatLine(feat, rec.id, source = feat.source, score = feat.score, phase = feat.phase, outStream = outStream)   
       firstRec = False 
-    if writeFasta and not suppressFasta:
-      outStream.write("##FASTA\n")
+    if not suppressFasta:
+      wroteHeader = False
       for rec in inRec:
         rec.description = ""
-        if not isinstance(rec.seq, UnknownSeq):
+        if writeFasta[rec.id]:
+          if not wroteHeader:
+            outStream.write("##FASTA\n")
+            wroteHeader = True
           SeqIO.write(rec, outStream, "fasta")
