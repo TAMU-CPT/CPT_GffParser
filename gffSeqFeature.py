@@ -59,7 +59,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         self._id = id
         if "ID" in self.qualifiers.keys():
           self._id = self.qualifiers["ID"][0]
-        elif id != "<unknown id>":
+        elif id != "<unknown id>" and id != "":
           self.qualifiers["ID"] = [id]
         if sub_features is None:
             sub_features = []
@@ -75,7 +75,7 @@ class gffSeqFeature(SeqFeature.SeqFeature):
         """Set function for the ID property. Syncs with the ID/Parent qualifiers, and multiple entries are valid in GFF format, so try to replace existing value."""
         oldID = self._id
         self._id = value
-        if oldID = "<unknown id>":
+        if oldID == "<unknown id>":
           self.qualifiers["ID"] = [value]
         elif "ID" in self.qualifiers.keys():
           foundVal = False
