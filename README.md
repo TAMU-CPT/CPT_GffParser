@@ -2,6 +2,7 @@
 An extensively featured Python parser for GFF format reading and writing
 
 ### Table of Contents  
+- [Changelog](#Changelog)  
 - [Need](#Need)  
 - [Goals](#Goals)  
 - [Release](#Release)  
@@ -14,6 +15,9 @@ An extensively featured Python parser for GFF format reading and writing
 - [Credit](#Credit)  
 - [Contact Us](#contact-us)  
     
+### Changelog
+1.0.0 - Initial release
+1.2.0 - Better handling of Is_circular features, removal of UnknownSeq in favor of BioPython's new Seq-based method. Requires Biopython 1.79 or greater
 
 ## Need
 The Center for Phage Technology uses the Generic Feature Format extensively in our analysis, and Biopython is the most extensively integrated library within our own codebase. Unfortunately, the GFF format is not directly supported by Biopython, and as development of that project continued, we were no longer able to find an acceptable community solution to our need to support the GFF format. We encountered 2 main obstacles to implementing outside solutions: 
