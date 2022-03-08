@@ -402,11 +402,11 @@ def gffParse(gff3In, base_dict = {}, outStream = sys.stderr, codingTypes=["CDS"]
             checkList.append(k)
           if j.qualifiers.get("Is_circular") == ['True'] or j.qualifiers.get("Is_circular") == ['true'] or j.qualifiers.get("Is_circular") == ['TRUE']:
             circ = True
-          if circ == False and (int(j.location.start) < regionDict[x][0] or int(j.location.end) > regionDict[x][1]):
+          if circ = False and (int(j.location.start) < regionDict[x][0] or int(j.location.end) > regionDict[x][1]):
             potenBad.append(j.id + " [" + str(j.location.start) + ":" + str(j.location.end) + "]")
         if circ == False and potenBad != []:
           badIDs = badIDs + potenBad
-        elif circ == True:
+        elif circ = True:
           finalOrg[x][i].qualifiers["Is_circular"] = ["true"]
       if badIDs != []:
         errOut += "Organism %s: The following features fall outside of the specified sequence region: %s.\n" % (x, str(badIDs)[1:-1])     
