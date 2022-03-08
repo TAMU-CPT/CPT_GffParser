@@ -17,6 +17,7 @@ An extensively featured Python parser for GFF format reading and writing
     
 ### Changelog
 1.0.0 - Initial release
+
 1.2.0 - Better handling of Is_circular features, removal of UnknownSeq in favor of BioPython's new Seq-based method. Requires Biopython 1.79 or greater
 
 ## Need
